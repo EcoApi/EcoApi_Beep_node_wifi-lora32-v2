@@ -19,8 +19,6 @@
 #include <hal/hal.h>
 #include <lmic/lmic_util.h>
 
-#define USE_MY_CREDENTIALS 0u
-
 #if(USE_MY_CREDENTIALS == 1)
     #include "credentials.h"
 #else
