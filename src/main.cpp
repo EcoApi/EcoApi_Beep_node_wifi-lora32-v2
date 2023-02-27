@@ -25,6 +25,16 @@
     #include "credentials_template.h"
 #endif
 
+#include <SHT1x.h>
+
+// Specify data and clock connections and instantiate SHT1x object
+#define dataPin  21
+#define clockPin 22
+
+// default to 5.0v boards, e.g. Arduino UNO
+SHT1x sht1x(dataPin, clockPin);
+
+
 void os_getArtEui (u1_t* buf) { memcpy_P(buf, APPEUI, 8);}
 void os_getDevEui (u1_t* buf) { memcpy_P(buf, DEVEUI, 8);}
 void os_getDevKey (u1_t* buf) {  memcpy_P(buf, APPKEY, 16);}
@@ -60,16 +70,22 @@ void do_send(osjob_t* j){
     if (LMIC.opmode & OP_TXRXPEND) {
         Serial.println(F("OP_TXRXPEND, not sending"));
     } else {
+#if 1 
         temperature_ += 0.2;
         humidity_ += 0.2;
-        pressure_ += 10; 
-        weight_ += 1;
- 
+         
         if(temperature_ > 85.0)
             temperature_ = -40.0;
 
         if(humidity_ > 100)
             humidity_ = 0;
+#else
+        temperature_ = sht1x.readTemperatureC();
+        humidity_ = sht1x.readHumidity();
+#endif
+        
+        pressure_ += 10; 
+        weight_ += 1;
 
         if(pressure_ > 2000)
             pressure_ = 0; 
@@ -282,4 +298,22 @@ void loop() {
   // but beware that LoRaWAN timing is pretty tight, so if you do more than a few milliseconds of work, you
   // will want to call `os_runloop_once()` every so often, to keep the radio running.
   os_runloop_once(); // Readings taken, sent and looped in the do_send() function called from setup
+
+#if 0
+    //Heltec.display->
+    
+    temperature_ = sht1x.readTemperatureC();
+    humidity_ = sht1x.readHumidity();
+
+    Heltec.display->clear();
+    Heltec.display->setTextAlignment(TEXT_ALIGN_LEFT);
+    Heltec.display->setFont(ArialMT_Plain_10);
+    Heltec.display->drawString(2, 0, "Temperature: " + String(temperature_) + " °C");
+    Heltec.display->drawString(2, 10, "Humidity: " + String(humidity_) + " %");
+    Heltec.display->drawString(2, 20, "Pressure: " + String(pressure_) + " hPa");
+    Heltec.display->drawString(2, 30, "Weight: " + String(weight_) + " Kg");
+    Heltec.display->drawString(2, 40, "FFT: ");
+    Heltec.display->display(); 
+    delay(2000);
+#endif        
 }
